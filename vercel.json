@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/speak.go": {
+      "runtime": "vercel-golang@1.0.0"
+    }
+  }
+}
