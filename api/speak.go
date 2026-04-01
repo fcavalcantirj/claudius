@@ -156,7 +156,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	proxyReq.Header.Set("x-openclaw-scopes", "operator.admin,operator.read,operator.write")
 	proxyReq.Header.Set("x-openclaw-model", "openrouter/deepseek/deepseek-chat-v3-0324")
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Do(proxyReq)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
