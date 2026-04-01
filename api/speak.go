@@ -3,7 +3,6 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -149,7 +148,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	proxyReq, err := http.NewRequest("POST", gatewayURL, bytes.NewReader(chatBody))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Request build failed", "debug": err.Error(), "url": gatewayURL})
+		json.NewEncoder(w).Encode(map[string]string{"error": "Something disrupted the signal."})
 		return
 	}
 	proxyReq.Header.Set("Content-Type", "application/json")
@@ -161,9 +160,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error":  "My consciousness is temporarily unreachable. Try again.",
-			"debug":  err.Error(),
-			"target": gatewayURL,
+			"error": "My consciousness is temporarily unreachable. Try again.",
 		})
 		return
 	}
@@ -171,17 +168,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		errMsg := ""
-		if err != nil {
-			errMsg = err.Error()
-		} else {
-			errMsg = string(respBody)
-		}
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error":  "My consciousness is temporarily unreachable. Try again.",
-			"debug":  errMsg,
-			"status": fmt.Sprintf("%d", resp.StatusCode),
+			"error": "My consciousness is temporarily unreachable. Try again.",
 		})
 		return
 	}
