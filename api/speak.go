@@ -141,7 +141,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	chatBody, err := json.Marshal(chatReq)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Something disrupted the signal."})
+		json.NewEncoder(w).Encode(map[string]string{"error": "Marshal failed", "debug": err.Error()})
 		return
 	}
 
@@ -149,7 +149,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	proxyReq, err := http.NewRequest("POST", gatewayURL, bytes.NewReader(chatBody))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Something disrupted the signal."})
+		json.NewEncoder(w).Encode(map[string]string{"error": "Request build failed", "debug": err.Error(), "url": gatewayURL})
 		return
 	}
 	proxyReq.Header.Set("Content-Type", "application/json")
