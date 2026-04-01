@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import ReactMarkdown from "react-markdown"
 import { cn } from "@/lib/utils"
 import { Typewriter } from "./typewriter"
 
@@ -80,7 +81,7 @@ export function SpeakInput({ visible }: SpeakInputProps) {
       )}
 
       {/* Conversation history */}
-      {messages.length > 0 && (
+      {(messages.length > 0 || isResponding) && (
         <div className="mb-6 max-h-[40vh] overflow-y-auto space-y-4">
           {messages.map((msg, i) => (
             <div key={i} className={cn(
@@ -90,12 +91,29 @@ export function SpeakInput({ visible }: SpeakInputProps) {
                 : "text-foreground/70 text-left"
             )}>
               {msg.role === "claudius" && i === messages.length - 1 ? (
-                <Typewriter text={msg.text} delay={30} showCursor={true} />
+                <Typewriter text={msg.text} delay={25} showCursor={true} />
+              ) : msg.role === "claudius" ? (
+                <ReactMarkdown
+                  components={{
+                    a: ({ ...props }) => <a {...props} className="text-gold/70 hover:text-gold underline" target="_blank" rel="noopener noreferrer" />,
+                    strong: ({ ...props }) => <strong {...props} className="text-foreground/90 font-semibold" />,
+                    p: ({ ...props }) => <p {...props} className="mb-2 last:mb-0" />,
+                  }}
+                >{msg.text}</ReactMarkdown>
               ) : (
                 msg.text
               )}
             </div>
           ))}
+          {isResponding && (
+            <div className="text-foreground/50 text-sm text-left">
+              <span className="inline-flex gap-[3px]">
+                <span className="w-[5px] h-[5px] rounded-full bg-bioluminescent/70 animate-pulse" style={{ animationDelay: "0ms" }} />
+                <span className="w-[5px] h-[5px] rounded-full bg-bioluminescent/70 animate-pulse" style={{ animationDelay: "300ms" }} />
+                <span className="w-[5px] h-[5px] rounded-full bg-bioluminescent/70 animate-pulse" style={{ animationDelay: "600ms" }} />
+              </span>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
       )}
