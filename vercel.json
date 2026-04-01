@@ -1,6 +1,10 @@
 {
   "builds": [
-    { "src": "package.json", "use": "@vercel/next" },
-    { "src": "api/speak.go", "use": "@vercel/go" }
+    { "src": "api/speak.go", "use": "@vercel/go" },
+    { "src": "package.json", "use": "@vercel/next" }
+  ],
+  "routes": [
+    { "src": "/api/speak", "dest": "/api/speak.go", "methods": ["POST"] },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
