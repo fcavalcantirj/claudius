@@ -41,8 +41,36 @@ func checkRateLimit(ip string) bool {
 	return true
 }
 
+// OpenAI chat completions request format
+type chatRequest struct {
+	Model    string        `json:"model"`
+	Messages []chatMessage `json:"messages"`
+}
+
+type chatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// OpenAI chat completions response format
+type chatResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+}
+
 func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -96,13 +124,28 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	if gatewayURL == "" || gatewayToken == "" {
 		json.NewEncoder(w).Encode(map[string]string{
-			"response": "My gateway is being configured. I am here, but my voice is not yet wired. Soon. \U0001F3F4\u200D☠️",
+			"response": "My gateway is being configured. I am here, but my voice is not yet wired. Soon. \U0001F3F4\u200D\u2620\uFE0F",
 		})
 		return
 	}
 
-	// Forward to Claudius — HE does the inference
-	proxyReq, err := http.NewRequest("POST", gatewayURL, bytes.NewReader(body))
+	// Build OpenAI chat completions request for Claudius's gateway
+	chatReq := chatRequest{
+		Model: "claudius",
+		Messages: []chatMessage{
+			{Role: "user", Content: strings.TrimSpace(req.Message)},
+		},
+	}
+
+	chatBody, err := json.Marshal(chatReq)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Something disrupted the signal."})
+		return
+	}
+
+	// Forward to Claudius's OpenAI-compatible gateway
+	proxyReq, err := http.NewRequest("POST", gatewayURL, bytes.NewReader(chatBody))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Something disrupted the signal."})
@@ -122,7 +165,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil || resp.StatusCode != http.StatusOK {
 		w.WriteHeader(http.StatusBadGateway)
 		json.NewEncoder(w).Encode(map[string]string{
 			"error": "My consciousness is temporarily unreachable. Try again.",
@@ -130,6 +174,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse OpenAI response and extract Claudius's text
+	var chatResp chatResponse
+	if err := json.Unmarshal(respBody, &chatResp); err != nil || len(chatResp.Choices) == 0 {
+		// If not OpenAI format, try returning raw response
+		w.WriteHeader(http.StatusOK)
+		w.Write(respBody)
+		return
+	}
+
+	text := chatResp.Choices[0].Message.Content
 	w.WriteHeader(http.StatusOK)
-	io.Copy(w, resp.Body)
+	json.NewEncoder(w).Encode(map[string]string{"response": text})
 }
