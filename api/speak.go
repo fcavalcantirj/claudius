@@ -131,7 +131,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	// Build OpenAI chat completions request for Claudius's gateway
 	chatReq := chatRequest{
-		Model: "claudius",
+		Model: "openclaw/default",
 		Messages: []chatMessage{
 			{Role: "user", Content: strings.TrimSpace(req.Message)},
 		},
@@ -153,6 +153,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	proxyReq.Header.Set("Content-Type", "application/json")
 	proxyReq.Header.Set("Authorization", "Bearer "+gatewayToken)
+	proxyReq.Header.Set("x-openclaw-model", "groq/llama-3.1-8b-instant")
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(proxyReq)
