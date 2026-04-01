@@ -153,7 +153,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	proxyReq.Header.Set("Content-Type", "application/json")
 	proxyReq.Header.Set("Authorization", "Bearer "+gatewayToken)
-	proxyReq.Header.Set("x-openclaw-model", "groq/llama-3.1-8b-instant")
+	proxyReq.Header.Set("x-openclaw-scopes", "operator.admin,operator.read,operator.write")
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(proxyReq)
